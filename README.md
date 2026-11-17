@@ -10,9 +10,10 @@ Classifies S or anti S trained using unlabeled data.
 - scikit-learn (evaluation script only)
 
 
-Each run generates 5,000 randomized S images and their 5,000 horizontal mirrors at 36 × 36 pixels. The labeled pairs are shuffled and the labels are not supplied to the trainer. The CNN is trained for 12 epochs with batches of 64 using the loss function 
+Each run generates 5,000 randomized S images and their 5,000 horizontal mirrors at 36 × 36 pixels. The labeled pairs are shuffled and the labels are not supplied to the trainer. The CNN is trained for 12 epochs with batches of 64 using the loss function
+
 $$
-\mathcal{L}_{\text{unlabeled}} = \left( \frac{\vert{}P(X_{\text{orig}}) - P(X_{\text{mirror}})\vert{}}{2} - 0.5 \right)^2
+\mathcal{L}_{\text{unlabeled}} = \left( \frac{\lvert P(X_{\text{orig}}) - P(X_{\text{mirror}}) \rvert}{2} - 0.5 \right)^2
 $$
 
 On completion, it saves:
