@@ -167,6 +167,8 @@ class BlindChiralTrainer(tf.keras.Model):
     def __init__(self, antisym_cnn):
         super().__init__()
         self.cnn = antisym_cnn
+        # flip followed by a random rotation = mirror about a random axis
+        self.random_rotation = layers.RandomRotation(0.5, fill_mode="constant", fill_value=0.0)
         self.loss_tracker = tf.keras.metrics.Mean(name="blind_loss")
 
     @property
@@ -174,14 +176,16 @@ class BlindChiralTrainer(tf.keras.Model):
         return [self.loss_tracker]
 
     def train_step(self, X_unlabeled):
-        X_mirror = tf.image.flip_left_right(X_unlabeled)
+        # Chirality is odd under EVERY reflection, not just the horizontal flip.
+        # Oddness under one fixed flip is also satisfied by "leans / vs \" (tilt),
+        # which is what the network learns otherwise.
+        X_mirror = self.random_rotation(tf.image.flip_left_right(X_unlabeled), training=True)
 
         with tf.GradientTape() as tape:
             P_orig = self.cnn(X_unlabeled, training=True)
             P_mirror = self.cnn(X_mirror, training=True)
-            blind_loss = tf.reduce_mean(
-                tf.square(tf.abs(P_orig - P_mirror) / 2.0 * 0.5)
-            )
+            # maximise (S(x) - S(Mx))^2; the old line *minimised* it, collapsing S to 0
+            blind_loss = -tf.reduce_mean(tf.square((P_orig - P_mirror) / 2.0))
 
         grads = tape.gradient(blind_loss, self.cnn.trainable_variables)
         self.optimizer.apply_gradients(zip(grads, self.cnn.trainable_variables))
